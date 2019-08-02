@@ -1,3 +1,4 @@
+
 const svg = d3.select('.canvas')
 	.append('svg')
 	.attr('width', 1200)
@@ -43,6 +44,8 @@ xAxisGroup.selectAll('text')
 	.attr('font-family', 'Arial')
 	.attr('font-size', '1.5em');
 
+const t = d3.transition().duration(1550);
+
 const update = (data) => {
 
 	// updating scale domains
@@ -57,20 +60,27 @@ const update = (data) => {
 	rects.exit().remove();
 
 	//update current shapes in the dom
-	rects.attr('width', x.bandwidth)
-		.attr('height', d => graphHeight - y(d.orders))
+	rects.attr('width', 0)
 		.attr('fill', 'orange')
 		.attr('x', d => x(d.name))
+		.transition(t)
+		.attrTween('width', widthTween)
+		.attr('height', d => graphHeight - y(d.orders))
 		.attr('y', d => y(d.orders))
 
 	//append the enter selection to the dom
 	rects.enter()
 		.append('rect')
-		.attr('width', x.bandwidth)
-		.attr('height', d => graphHeight - y(d.orders))
+		.attr('width', 0)
+		.attr('height', 0)
 		.attr('fill', 'orange')
 		.attr('x', d => x(d.name))
-		.attr('y', d => y(d.orders));
+		.attr('y', graphHeight)
+		.transition(t)
+		.attrTween('width', widthTween)
+		.attr('y', d => y(d.orders))
+		.attr('height', d => graphHeight - y(d.orders));
+
 	// calling axes
 	xAxisGroup.call(xAxis);
 	yAxisGroup.call(yAxis);
@@ -95,6 +105,18 @@ db.collection('dishes').onSnapshot(res => {
 	})
 	update(data);
 })
+
+//tweens
+const widthTween = (d) => {
+	// define interpolation
+	// d3.interpolate returns a function witch we call 'i'
+	let i = d3.interpolate(0, x.bandwidth());
+	return function (t) {
+		return i(t);
+	}
+
+}
+// setup transitions
 
 // d3.json('planets.json').then((data) => {
 // 	const circs = svg.selectAll('circle')
